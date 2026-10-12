@@ -6,6 +6,7 @@
 
 mod db;
 mod error;
+pub mod link;
 mod metadata;
 mod model;
 pub mod sync;

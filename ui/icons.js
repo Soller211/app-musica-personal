@@ -38,6 +38,7 @@ const ICONS = (() => {
     check: s('<path fill="currentColor" d="m9.5 16.6-4.6-4.6-1.4 1.4 6 6 11-11-1.4-1.4z"/>'),
     computer: s('<path fill="currentColor" d="M3 4h18v12H3zm2 2v8h14V6zM8 18h8v2H8z"/>'),
     chevron: s('<path fill="currentColor" d="m10 6-1.4 1.4 4.6 4.6-4.6 4.6L10 18l6-6z"/>'),
+    link: s('<path fill="currentColor" d="M10.6 13.4a1 1 0 0 1 0-1.4l3.5-3.5a3 3 0 1 1 4.2 4.2l-2 2-1.4-1.4 2-2a1 1 0 0 0-1.4-1.4l-3.5 3.5a1 1 0 0 1-1.4 0M13.4 10.6a1 1 0 0 1 0 1.4l-3.5 3.5a3 3 0 1 1-4.2-4.2l2-2 1.4 1.4-2 2a1 1 0 0 0 1.4 1.4l3.5-3.5a1 1 0 0 1 1.4 0"/>'),
     next2: s('<path fill="currentColor" d="M3 6h12v2H3zm0 5h12v2H3zm0 5h8v2H3zm14-2v-3h2v3h3v2h-3v3h-2v-3h-3v-2z"/>'),
   };
 })();

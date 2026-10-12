@@ -22,6 +22,8 @@ struct AppState {
     session: Mutex<Option<SyncSession>>,
     syncing: Arc<AtomicBool>,
     cancel: Arc<AtomicBool>,
+    link_busy: Arc<AtomicBool>,
+    link_cancel: Arc<AtomicBool>,
 }
 
 impl AppState {
@@ -201,6 +203,42 @@ async fn set_playlist_tracks(
         .map_err(err)
 }
 
+// ------------------------------------------------------ importar desde enlace
+
+/// Descarga un enlace directo (audio o ZIP) y lo añade a la biblioteca.
+/// El progreso llega como eventos `link-progress`.
+#[tauri::command]
+async fn import_url(
+    url: String,
+    app: AppHandle,
+    state: State<'_, AppState>,
+) -> CmdResult<Vec<Track>> {
+    if state.link_busy.swap(true, Ordering::SeqCst) {
+        return Err("Ya hay una descarga en curso".into());
+    }
+    state.link_cancel.store(false, Ordering::SeqCst);
+    let (library, cancel, busy) = (
+        state.library.clone(),
+        state.link_cancel.clone(),
+        state.link_busy.clone(),
+    );
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        let r = bluewhale_core::link::import_url(&url, &library, &cancel, |p| {
+            let _ = app.emit("link-progress", p);
+        });
+        busy.store(false, Ordering::SeqCst);
+        r
+    })
+    .await
+    .map_err(err)?;
+    result.map_err(err)
+}
+
+#[tauri::command]
+fn import_url_cancel(state: State<'_, AppState>) {
+    state.link_cancel.store(true, Ordering::SeqCst);
+}
+
 // ------------------------------------------------------- Wi‑Fi: lado de la PC
 
 #[tauri::command]
@@ -328,6 +366,8 @@ pub fn run() {
                 session: Mutex::new(None),
                 syncing: Arc::new(AtomicBool::new(false)),
                 cancel: Arc::new(AtomicBool::new(false)),
+                link_busy: Arc::new(AtomicBool::new(false)),
+                link_cancel: Arc::new(AtomicBool::new(false)),
             });
             Ok(())
         })
@@ -349,6 +389,8 @@ pub fn run() {
             delete_playlist,
             add_to_playlist,
             set_playlist_tracks,
+            import_url,
+            import_url_cancel,
             share_start,
             share_stop,
             share_status,

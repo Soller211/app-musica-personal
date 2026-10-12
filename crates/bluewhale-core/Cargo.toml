@@ -14,7 +14,9 @@ fastrand = "2"
 gethostname = "1"
 serde_json = "1"
 tiny_http = "0.12"
-ureq = { version = "3", default-features = false, features = ["json"] }
+# rustls: HTTPS para «Importar desde enlace» (sin depender de OpenSSL, compila en Android)
+ureq = { version = "3", default-features = false, features = ["json", "rustls"] }
+zip = { version = "9", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 walkdir = "2"
 
 [dev-dependencies]

@@ -795,7 +795,8 @@ function emptyLibrary() {
   return `<div class="empty"><div class="whale-big"></div><h2>Tu océano está vacío</h2>
     <p>${lib.isMobile ? "Importa canciones desde tu teléfono: se guardan dentro de la app y podrás escucharlas sin conexión." : "Añade una carpeta con tu música o importa canciones sueltas."}</p>
     ${lib.isMobile ? "" : `<button class="btn" data-act="folder">${ICONS.folder}Añadir carpeta</button> `}
-    <button class="btn ${lib.isMobile ? "" : "ghost"}" data-act="import">${ICONS.upload}Importar canciones</button></div>`;
+    <button class="btn ${lib.isMobile ? "" : "ghost"}" data-act="import">${ICONS.upload}Importar canciones</button>
+    <button class="btn ghost" data-act="link">${ICONS.link}Desde enlace</button></div>`;
 }
 
 const WAVE = (fill) => `<svg viewBox="0 0 1200 60" preserveAspectRatio="none"><path fill="${fill}"
@@ -974,7 +975,8 @@ const VIEWS = {
       ${lib.isMobile ? syncCardHtml() : shareCardHtml()}
       <div class="settings-card"><h3>Importar canciones</h3>
         <p>Copia archivos de audio dentro de la app. Quedan guardados en el almacenamiento privado de BlueWhale y siempre se pueden escuchar sin conexión.</p>
-        <button class="btn" data-act="import">${ICONS.upload}Elegir archivos</button></div>
+        <div class="actions" style="margin:0"><button class="btn" data-act="import">${ICONS.upload}Elegir archivos</button>
+        <button class="btn ghost" data-act="link">${ICONS.link}Desde enlace</button></div></div>
       ${lib.isMobile ? "" : `<div class="settings-card"><h3>Carpetas de música</h3>
         <p>Las canciones se leen directamente de estas carpetas (no se copian). Re-escanea cuando añadas música nueva.</p>
         <div id="folders"></div>
@@ -1039,6 +1041,7 @@ $("#view").addEventListener("click", (e) => {
   if (!b) return;
   const act = b.dataset.act;
   if (act === "import") $("#file-input").click();
+  if (act === "link") linkSheet();
   if (act === "folder") pickFolder();
   if (act === "rescan") rescan();
   if (act === "new-playlist") newPlaylist();
@@ -1168,6 +1171,7 @@ async function init() {
   document.body.classList.toggle("mobile", lib.isMobile);
   parseRoute();
   setupSyncEvents();
+  setupLinkEvents();
   if (route.name === "sync") enterSync();
   try {
     await loadLibrary();

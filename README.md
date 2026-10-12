@@ -40,6 +40,7 @@ BlueWhale tiene identidad propia, inspirada en el océano profundo:
 | Dónde | Cómo |
 |---|---|
 | **Teléfono** | *Ajustes → Importar canciones*: eliges archivos y se **copian dentro de la app**, así siempre están disponibles sin conexión. |
+| **Desde un enlace** | *Ajustes → Importar canciones → Desde enlace*: pega un enlace **directo** a un audio o a un **ZIP** con un álbum (descargas de Bandcamp, Internet Archive, Free Music Archive…). BlueWhale lo descarga y lo deja listo sin conexión. |
 | **PC** | *Ajustes → Añadir carpeta*: la app lee tu carpeta de música directamente (no copia nada). Usa *Re‑escanear* cuando añadas canciones. También puedes importar archivos sueltos. |
 
 ## Sincronizar por Wi‑Fi (PC → teléfono)
@@ -68,7 +69,7 @@ Pasa música de tu PC al teléfono sin cables, eligiendo qué quieres:
 crates/bluewhale-core/   Núcleo en Rust (sin interfaz): SQLite, escaneo, metadatos, playlists,
                       sincronización Wi‑Fi (sync/) + tests
 src-tauri/            App Tauri: expone el núcleo a la interfaz como comandos
-ui/                   Interfaz (index.html, style.css, app.js, sync.js, icons.js)
+ui/                   Interfaz (index.html, style.css, app.js, sync.js, link.js, icons.js)
 assets/icon.svg       Icono original (genera todos los iconos con `npm run icons`)
 .github/workflows/    CI: tests + compilación del APK de Android y de los instaladores de PC
 ```
