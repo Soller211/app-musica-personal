@@ -1,0 +1,19 @@
+{
+  "name": "mi-musica",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "android:init": "tauri android init",
+    "android:dev": "tauri android dev",
+    "android:build": "tauri android build --apk",
+    "ios:init": "tauri ios init",
+    "ios:dev": "tauri ios dev",
+    "icons": "tauri icon assets/icon.svg"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

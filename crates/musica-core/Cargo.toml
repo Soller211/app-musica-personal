@@ -1,0 +1,16 @@
+[package]
+name = "musica-core"
+description = "Biblioteca musical offline: escaneo, metadatos, base de datos y playlists"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+lofty = "0.25"
+rusqlite = { version = "0.40", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+walkdir = "2"
+
+[dev-dependencies]
+tempfile = "3"

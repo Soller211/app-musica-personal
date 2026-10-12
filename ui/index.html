@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#121212" />
+  <title>Mi Música</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <div class="brand"><span class="logo"></span>Mi Música</div>
+      <nav id="nav"></nav>
+      <div class="side-section">
+        <div class="side-title">
+          <span>Playlists</span>
+          <button class="icon-btn small" id="side-new-playlist" title="Nueva playlist"></button>
+        </div>
+        <div id="side-playlists"></div>
+      </div>
+    </aside>
+
+    <main id="main">
+      <header id="topbar">
+        <button class="icon-btn" id="back-btn" title="Atrás"></button>
+        <div id="topbar-title"></div>
+      </header>
+      <div id="view"></div>
+    </main>
+
+    <footer id="player">
+      <div class="progress-mini"><div id="mini-progress"></div></div>
+      <div class="now" id="now-open">
+        <img id="np-cover" class="cover" alt="" />
+        <div class="now-text">
+          <div id="np-title" class="ellipsis">Nada sonando</div>
+          <div id="np-artist" class="ellipsis muted"></div>
+        </div>
+        <button class="icon-btn heart" id="np-fav" title="Favorita"></button>
+      </div>
+      <div class="controls">
+        <div class="buttons">
+          <button class="icon-btn desktop-only" id="btn-shuffle" title="Aleatorio"></button>
+          <button class="icon-btn desktop-only" id="btn-prev" title="Anterior"></button>
+          <button class="play-btn" id="btn-play" title="Reproducir"></button>
+          <button class="icon-btn desktop-only" id="btn-next" title="Siguiente"></button>
+          <button class="icon-btn desktop-only" id="btn-repeat" title="Repetir"></button>
+        </div>
+        <div class="seek desktop-only">
+          <span id="t-cur">0:00</span>
+          <input type="range" id="seek" min="0" max="1000" value="0" />
+          <span id="t-dur">0:00</span>
+        </div>
+      </div>
+      <div class="extra desktop-only">
+        <button class="icon-btn" id="btn-queue" title="Cola"></button>
+        <button class="icon-btn" id="btn-mute" title="Silenciar"></button>
+        <input type="range" id="volume" min="0" max="100" value="100" />
+      </div>
+    </footer>
+
+    <nav id="tabbar"></nav>
+  </div>
+
+  <!-- Reproductor a pantalla completa (móvil) -->
+  <section id="fullplayer" hidden>
+    <div class="fp-bg" id="fp-bg"></div>
+    <div class="fp-inner">
+      <div class="fp-head">
+        <button class="icon-btn" id="fp-close" title="Cerrar"></button>
+        <div class="fp-from muted" id="fp-from">Reproduciendo</div>
+        <button class="icon-btn" id="fp-queue" title="Cola"></button>
+      </div>
+      <img id="fp-cover" class="fp-cover" alt="" />
+      <div class="fp-meta">
+        <div>
+          <div id="fp-title" class="fp-title ellipsis"></div>
+          <div id="fp-artist" class="muted ellipsis"></div>
+        </div>
+        <button class="icon-btn heart" id="fp-fav" title="Favorita"></button>
+      </div>
+      <input type="range" id="fp-seek" min="0" max="1000" value="0" />
+      <div class="fp-times muted"><span id="fp-cur">0:00</span><span id="fp-dur">0:00</span></div>
+      <div class="fp-controls">
+        <button class="icon-btn" id="fp-shuffle"></button>
+        <button class="icon-btn big" id="fp-prev"></button>
+        <button class="play-btn big" id="fp-play"></button>
+        <button class="icon-btn big" id="fp-next"></button>
+        <button class="icon-btn" id="fp-repeat"></button>
+      </div>
+    </div>
+  </section>
+
+  <div id="sheet-backdrop" hidden></div>
+  <div id="sheet" hidden></div>
+  <div id="toast" hidden></div>
+  <input type="file" id="file-input" accept="audio/*,.mp3,.flac,.ogg,.opus,.m4a,.aac,.wav" multiple hidden />
+
+  <audio id="audio" preload="auto"></audio>
+  <script src="icons.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

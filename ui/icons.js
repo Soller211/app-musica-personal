@@ -1,0 +1,38 @@
+// Iconos SVG en línea (sin dependencias, funciona offline).
+const ICONS = (() => {
+  const s = (d, extra = "") =>
+    `<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" ${extra}>${d}</svg>`;
+  return {
+    home: s('<path fill="currentColor" d="M12 3 2 11h3v9h6v-6h2v6h6v-9h3z"/>'),
+    search: s('<path fill="currentColor" d="M10 2a8 8 0 0 1 6.3 12.9l5.4 5.4-1.4 1.4-5.4-5.4A8 8 0 1 1 10 2m0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12"/>'),
+    library: s('<path fill="currentColor" d="M3 3h2v18H3zm5 0h2v18H8zm5.5.6 1.9-.6 6 17.5-1.9.6z"/>'),
+    settings: s('<path fill="currentColor" d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.4-2.5 1a7 7 0 0 0-1.7-1L15 3h-4l-.4 2.6a7 7 0 0 0-1.7 1l-2.5-1-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.4 2.5-1a7 7 0 0 0 1.7 1L11 21h4l.4-2.6a7 7 0 0 0 1.7-1l2.5 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7" transform="translate(-1 0)"/>'),
+    music: s('<path fill="currentColor" d="M9 3v12.3A4 4 0 1 0 11 19V8h8V3z"/>'),
+    album: s('<path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m0 13a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>'),
+    artist: s('<path fill="currentColor" d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10m0 2c-4.4 0-9 2.2-9 5v3h18v-3c0-2.8-4.6-5-9-5"/>'),
+    playlist: s('<path fill="currentColor" d="M3 5h12v2H3zm0 4h12v2H3zm0 4h8v2H3zm13 0v6.3A3 3 0 1 0 18 22v-7h3v-2z"/>'),
+    heart: s('<path fill="none" stroke="currentColor" stroke-width="2" d="M12 20s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z"/>'),
+    heartFill: s('<path fill="currentColor" d="M12 21s-7.6-4.7-9.8-9.6A5.6 5.6 0 0 1 12 6.5a5.6 5.6 0 0 1 9.8 4.9C19.6 16.3 12 21 12 21"/>'),
+    play: s('<path fill="currentColor" d="M8 5v14l11-7z"/>'),
+    pause: s('<path fill="currentColor" d="M6 5h4v14H6zm8 0h4v14h-4z"/>'),
+    next: s('<path fill="currentColor" d="M6 6v12l8.5-6zm10 0h2v12h-2z"/>'),
+    prev: s('<path fill="currentColor" d="M18 6v12L9.5 12zM6 6h2v12H6z"/>'),
+    shuffle: s('<path fill="currentColor" d="M17 3l4 4-4 4V8h-2.2l-2.6 3.2-1.3-1.6L14 6h3zM3 6h4.5l9.3 11H17v-3l4 4-4 4v-3h-2.2L5.6 8H3zm0 10h2.6l2.3-2.8 1.3 1.6L6.6 18H3z"/>'),
+    repeat: s('<path fill="currentColor" d="M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2z"/>'),
+    repeatOne: s('<path fill="currentColor" d="M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2zm-4-2V9h-1l-2 1v1h1.5v4z"/>'),
+    queue: s('<path fill="currentColor" d="M3 6h14v2H3zm0 5h14v2H3zm0 5h9v2H3zm12 0 6 3.5-6 3.5z"/>'),
+    volume: s('<path fill="currentColor" d="M3 9v6h4l5 5V4L7 9zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4M14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6"/>'),
+    mute: s('<path fill="currentColor" d="M3 9v6h4l5 5V4L7 9zm18.7 1.7-1.4-1.4L18 11.6l-2.3-2.3-1.4 1.4 2.3 2.3-2.3 2.3 1.4 1.4 2.3-2.3 2.3 2.3 1.4-1.4-2.3-2.3z"/>'),
+    more: s('<path fill="currentColor" d="M5 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4m7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4"/>'),
+    plus: s('<path fill="currentColor" d="M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7z"/>'),
+    back: s('<path fill="currentColor" d="m14 5-7 7 7 7 1.4-1.4L9.8 12l5.6-5.6z"/>'),
+    down: s('<path fill="currentColor" d="m5 8 7 7 7-7 1.4 1.4L12 17.8 3.6 9.4z"/>'),
+    up: s('<path fill="currentColor" d="m12 6 8 8-1.4 1.4L12 8.8l-6.6 6.6L4 14z"/>'),
+    trash: s('<path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4zm-3 6h12l-1 12H7z"/>'),
+    folder: s('<path fill="currentColor" d="M3 5h7l2 2h9v12H3z"/>'),
+    upload: s('<path fill="currentColor" d="M11 16V7.8L7.4 11.4 6 10l6-6 6 6-1.4 1.4L13 7.8V16zm-7 2h16v2H4z"/>'),
+    refresh: s('<path fill="currentColor" d="M17.6 6.4A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.8-4.2L13 11h7V4z"/>'),
+    edit: s('<path fill="currentColor" d="M4 17.3V20h2.7l8-8L12 9.3zM19.7 7 17 4.3l-2 2L17.7 9z"/>'),
+    next2: s('<path fill="currentColor" d="M3 6h12v2H3zm0 5h12v2H3zm0 5h8v2H3zm14-2v-3h2v3h3v2h-3v3h-2v-3h-3v-2z"/>'),
+  };
+})();

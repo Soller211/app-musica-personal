@@ -1,0 +1,22 @@
+[package]
+name = "mi-musica"
+description = "Tu propio Spotify personal, 100% offline"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+# Los nombres de lib distintos al binario evitan conflictos en Windows.
+name = "mi_musica_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+musica-core = { path = "../crates/musica-core" }
+tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+percent-encoding = "2"
