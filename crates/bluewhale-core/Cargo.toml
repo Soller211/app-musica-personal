@@ -1,5 +1,5 @@
 [package]
-name = "musica-core"
+name = "bluewhale-core"
 description = "Biblioteca musical offline: escaneo, metadatos, base de datos y playlists"
 version.workspace = true
 edition.workspace = true

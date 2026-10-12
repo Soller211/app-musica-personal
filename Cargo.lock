@@ -149,6 +149,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "bluewhale"
+version = "0.1.0"
+dependencies = [
+ "bluewhale-core",
+ "percent-encoding",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+]
+
+[[package]]
+name = "bluewhale-core"
+version = "0.1.0"
+dependencies = [
+ "lofty",
+ "rusqlite",
+ "serde",
+ "tempfile",
+ "thiserror 2.0.21",
+ "walkdir",
+]
+
+[[package]]
 name = "brotli"
 version = "9.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1850,19 +1875,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mi-musica"
-version = "0.1.0"
-dependencies = [
- "musica-core",
- "percent-encoding",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
-]
-
-[[package]]
 name = "mime"
 version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1918,18 +1930,6 @@ dependencies = [
  "serde",
  "thiserror 2.0.21",
  "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "musica-core"
-version = "0.1.0"
-dependencies = [
- "lofty",
- "rusqlite",
- "serde",
- "tempfile",
- "thiserror 2.0.21",
- "walkdir",
 ]
 
 [[package]]

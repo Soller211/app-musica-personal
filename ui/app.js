@@ -337,6 +337,7 @@ function updateTime() {
 }
 
 function updatePlayState() {
+  document.body.classList.toggle("is-playing", !audio.paused);
   const icon = audio.paused ? ICONS.play : ICONS.pause;
   $("#btn-play").innerHTML = icon;
   $("#fp-play").innerHTML = icon;
@@ -385,7 +386,7 @@ function updateNowPlaying() {
       artwork: src ? [{ src, sizes: "512x512" }] : [],
     });
   }
-  document.title = t ? `${t.title} · ${t.artist}` : "Mi Música";
+  document.title = t ? `${t.title} · ${t.artist}` : "BlueWhale";
 }
 
 function updateFavButtons() {
@@ -711,7 +712,7 @@ function trackRows(tracks, opts = {}) {
   const cur = player.current;
   return `<div class="tracks ${opts.noAlbum ? "no-album" : ""}" data-list>${tracks
     .map((t, i) => `<div class="track ${cur && cur.id === t.id ? "playing" : ""}" data-id="${t.id}" data-i="${i}">
-      <div class="n">${opts.numbers === "track" ? t.trackNo ?? "–" : i + 1}</div>
+      <div class="n"><span class="num">${opts.numbers === "track" ? t.trackNo ?? "–" : i + 1}</span><span class="eq"><i></i><i></i><i></i></span></div>
       <div class="main">${opts.noCover ? "" : coverImg(t.cover)}<div style="min-width:0">
         <div class="t ellipsis">${esc(t.title)}</div><div class="a ellipsis">${esc(t.artist)}</div></div></div>
       <div class="al ellipsis">${esc(t.album)}</div>
@@ -790,10 +791,19 @@ function bindCards(container) {
 }
 
 function emptyLibrary() {
-  return `<div class="empty"><h2>Tu biblioteca está vacía</h2>
+  return `<div class="empty"><div class="whale-big"></div><h2>Tu océano está vacío</h2>
     <p>${lib.isMobile ? "Importa canciones desde tu teléfono: se guardan dentro de la app y podrás escucharlas sin conexión." : "Añade una carpeta con tu música o importa canciones sueltas."}</p>
     ${lib.isMobile ? "" : `<button class="btn" data-act="folder">${ICONS.folder}Añadir carpeta</button> `}
     <button class="btn ${lib.isMobile ? "" : "ghost"}" data-act="import">${ICONS.upload}Importar canciones</button></div>`;
+}
+
+const WAVE = (fill) => `<svg viewBox="0 0 1200 60" preserveAspectRatio="none"><path fill="${fill}"
+  d="M0 30C100 10 200 10 300 30s200 20 300 0 200-20 300 0 200 20 300 0v30H0z"/></svg>`;
+
+function oceanHero(greet, subtitle) {
+  return `<section class="ocean-hero"><div class="hero-whale"></div>
+    <div class="kicker">BlueWhale</div><h1>${greet}</h1><p>${esc(subtitle)}</p>
+    <div class="waves">${WAVE("rgba(79,214,255,.18)")}${WAVE("rgba(4,14,34,.55)")}</div></section>`;
 }
 
 function playAllActions(source, extra = "") {
@@ -805,21 +815,23 @@ const VIEWS = {
   home(v) {
     const h = new Date().getHours();
     const greet = h < 12 ? "Buenos días" : h < 20 ? "Buenas tardes" : "Buenas noches";
-    if (!lib.tracks.length) return `<h1 class="page">${greet}</h1>${emptyLibrary()}`;
+    if (!lib.tracks.length) return oceanHero(greet, "Trae tu música y empieza a nadar.") + emptyLibrary();
 
     const recentAlbums = [...lib.albums.values()].sort((a, b) => b.addedAt - a.addedAt).slice(0, 12);
     const recentPlayed = lib.tracks.filter((t) => t.lastPlayed).sort((a, b) => b.lastPlayed - a.lastPlayed).slice(0, 10);
     const top = lib.tracks.filter((t) => t.playCount).sort((a, b) => b.playCount - a.playCount).slice(0, 10);
     const favCount = lib.tracks.filter((t) => t.favorite).length;
 
-    let html = `<h1 class="page">${greet}</h1><div class="quick">
-      <div class="q fav" data-go="favorites"><div class="cover">${ICONS.heartFill}</div>Favoritas · ${favCount}</div>
+    const total = lib.tracks.reduce((s, t) => s + t.duration, 0);
+    let html = oceanHero(greet, `${plural(lib.tracks.length, "canción", "canciones")} · ${fmtLong(total)} de música en tu océano`);
+    html += `<div class="quick">
+      <div class="q" data-go="favorites"><div class="cover fav-cover">${ICONS.heartFill}</div>Favoritas · ${favCount}</div>
       <div class="q" data-go="songs"><div class="cover"></div>Todas las canciones</div>
       ${lib.playlists.slice(0, 4).map((p) => `<div class="q" data-go="playlist/${p.id}"><div class="cover"></div><span class="ellipsis">${esc(p.name)}</span></div>`).join("")}
     </div>`;
-    if (recentPlayed.length) html += `<h2>Escuchado recientemente</h2><div id="h-recent">${trackRows(recentPlayed)}</div>`;
-    html += `<h2>Añadido recientemente</h2><div class="row-scroll">${albumCards(recentAlbums)}</div>`;
-    if (top.length) html += `<h2>Lo que más escuchas</h2><div id="h-top">${trackRows(top)}</div>`;
+    if (recentPlayed.length) html += `<h2>Vuelve a sumergirte</h2><div id="h-recent">${trackRows(recentPlayed)}</div>`;
+    html += `<h2>Recién llegadas a tu océano</h2><div class="row-scroll">${albumCards(recentAlbums)}</div>`;
+    if (top.length) html += `<h2>Tus mareas favoritas</h2><div id="h-top">${trackRows(top)}</div>`;
     v.innerHTML = html;
     v.querySelectorAll("[data-go]").forEach((q) => (q.onclick = () => go(q.dataset.go)));
     if (recentPlayed.length) bindTrackList($("#h-recent", v), recentPlayed, "Escuchado recientemente");
@@ -859,7 +871,7 @@ const VIEWS = {
       <div class="chips">${[["playlists", "Playlists"], ["albums", "Álbumes"], ["artists", "Artistas"], ["songs", "Canciones"], ["favorites", "Favoritas"]]
         .map(([r, l]) => `<a class="chip" href="#/${r}" style="text-decoration:none;color:inherit">${l}</a>`).join("")}</div>
       <div class="quick" style="grid-template-columns:1fr">
-        <div class="q fav" data-go="favorites"><div class="cover">${ICONS.heartFill}</div>Favoritas</div>
+        <div class="q" data-go="favorites"><div class="cover fav-cover">${ICONS.heartFill}</div>Favoritas</div>
         ${lib.playlists.map((p) => `<div class="q" data-go="playlist/${p.id}"><div class="cover"></div>${esc(p.name)}</div>`).join("")}
         <div class="q" data-act="new-playlist"><div class="cover" style="display:grid;place-items:center">${ICONS.plus}</div>Nueva playlist</div>
       </div>
@@ -902,7 +914,7 @@ const VIEWS = {
 
   favorites(v) {
     const tracks = lib.tracks.filter((t) => t.favorite);
-    v.innerHTML = `<div class="hero"><div class="cover" style="background:linear-gradient(135deg,#450af5,#c4efd9);display:grid;place-items:center">${ICONS.heartFill.replace('width="24" height="24"', 'width="72" height="72"')}</div>
+    v.innerHTML = `<div class="hero"><div class="cover fav-cover">${ICONS.heartFill.replace('width="24" height="24"', 'width="72" height="72"')}</div>
       <div><div class="kind">Playlist</div><h1>Favoritas</h1><div class="muted">${plural(tracks.length, "canción", "canciones")}</div></div></div>
       ${tracks.length ? playAllActions("Favoritas") + trackRows(tracks) : `<div class="empty"><h2>Aún no tienes favoritas</h2><p>Toca el corazón en cualquier canción para guardarla aquí.</p></div>`}`;
     bindTrackList(v, tracks, "Favoritas");
@@ -959,7 +971,7 @@ const VIEWS = {
     const imported = lib.tracks.filter((t) => t.imported).length;
     v.innerHTML = `<h1 class="page">Ajustes</h1>
       <div class="settings-card"><h3>Importar canciones</h3>
-        <p>Copia archivos de audio dentro de la app. Quedan guardados en el almacenamiento privado de Mi Música y siempre se pueden escuchar sin conexión.</p>
+        <p>Copia archivos de audio dentro de la app. Quedan guardados en el almacenamiento privado de BlueWhale y siempre se pueden escuchar sin conexión.</p>
         <button class="btn" data-act="import">${ICONS.upload}Elegir archivos</button></div>
       ${lib.isMobile ? "" : `<div class="settings-card"><h3>Carpetas de música</h3>
         <p>Las canciones se leen directamente de estas carpetas (no se copian). Re-escanea cuando añadas música nueva.</p>
@@ -974,7 +986,8 @@ const VIEWS = {
         <div><b>${imported}</b><span class="muted">importadas</span></div>
         <div><b>${lib.tracks.reduce((s, t) => s + t.playCount, 0)}</b><span class="muted">reproducciones</span></div>
       </div></div>
-      <p class="muted" style="text-align:center">Mi Música 0.1 · hecha con Rust + Tauri · 100% offline</p>`;
+      <div class="signature"><div class="logo" data-logo></div>BlueWhale 0.1 · hecha con Rust + Tauri · 100% offline</div>`;
+    injectLogos(v);
     if (!lib.isMobile) renderFolders();
   },
 };
@@ -1110,7 +1123,33 @@ function setupControls() {
 // ============================================================================
 // Inicio
 // ============================================================================
+const LOGO_SVG = `<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="bw-sea" x1="0" y1="0" x2=".4" y2="1">
+  <stop offset="0" stop-color="#2a7bff"/><stop offset="1" stop-color="#04112b"/></linearGradient></defs>
+  <rect width="64" height="64" rx="14" fill="url(#bw-sea)"/><g transform="translate(3.4 5.5) scale(.82)">
+  <path fill="#fff" d="M6 38c0-9.5 9-17 22-17 9.5 0 16.5 4 21 10.5l5.5-7.5c1-1.3 3-.8 3 1l-.5 7.5 6-1.5c1.8-.4 2.6 1.6 1.3 2.7L55.5 40C52 49 42 54 29 54 15 54 6 47.5 6 38z"/>
+  <path d="M9 42.5c4.5 5.5 12 8 20.5 8 8 0 15-2.5 20-7" fill="none" stroke="#5fd8ff" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="17" cy="35" r="2.3" fill="#04112b"/><g fill="none" stroke="#5fd8ff" stroke-width="2.8" stroke-linecap="round">
+  <path d="M22 19c-.5-4 .5-7 3-9.5M22 19c-2.5-3-5.5-4-9-3.5M22 19c2-2.5 5-3.5 8.5-3"/></g></g></svg>`;
+
+function injectLogos(root = document) {
+  root.querySelectorAll("[data-logo]").forEach((el) => (el.innerHTML = LOGO_SVG));
+}
+
+/** Burbujas decorativas que suben por el fondo. */
+function makeBubbles() {
+  const box = $("#bubbles");
+  for (let i = 0; i < 14; i++) {
+    const b = document.createElement("span");
+    const size = 4 + Math.random() * 14;
+    b.style.cssText = `left:${Math.random() * 100}%;width:${size}px;height:${size}px;` +
+      `animation-duration:${14 + Math.random() * 18}s;animation-delay:-${Math.random() * 30}s`;
+    box.appendChild(b);
+  }
+}
+
 async function init() {
+  injectLogos();
+  makeBubbles();
   renderNav();
   setupControls();
   updateModes();

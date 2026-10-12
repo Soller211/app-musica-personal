@@ -58,7 +58,7 @@ jobs:
         run: npx tauri android build --apk --debug --target aarch64 armv7
       - uses: actions/upload-artifact@v4
         with:
-          name: mi-musica-android
+          name: bluewhale-android
           path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
 
   desktop:
@@ -87,7 +87,7 @@ jobs:
       - run: npx tauri build
       - uses: actions/upload-artifact@v4
         with:
-          name: mi-musica-${{ matrix.os }}
+          name: bluewhale-${{ matrix.os }}
           path: |
             target/release/bundle/**/*.deb
             target/release/bundle/**/*.AppImage

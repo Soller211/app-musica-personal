@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard};
 
-use musica_core::{Folder, Library, Playlist, ScanReport, Track};
+use bluewhale_core::{Folder, Library, Playlist, ScanReport, Track};
 use tauri::ipc::{InvokeBody, Request};
 use tauri::{AppHandle, Manager, State};
 
@@ -199,5 +199,5 @@ pub fn run() {
             set_playlist_tracks,
         ])
         .run(tauri::generate_context!())
-        .expect("error al iniciar Mi Música");
+        .expect("error al iniciar BlueWhale");
 }

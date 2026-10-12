@@ -1,12 +1,26 @@
-# 🎵 Mi Música
+<p align="center"><img src="assets/icon.svg" width="120" alt="BlueWhale"></p>
 
-Tu propio "Spotify" personal: reproduce **tu** música, **100% offline**, en el
+# 🐋 BlueWhale
+
+Tu océano de música personal: reproduce **tu** música, **100% offline**, en el
 teléfono (Android / iOS) y en el PC (Windows / macOS / Linux).
 
 Está escrita en **Rust** con [Tauri 2](https://tauri.app). Rust se encarga de la
 biblioteca (leer metadatos y carátulas, base de datos SQLite, playlists,
 favoritos, estadísticas) y la interfaz es HTML/CSS/JS sin dependencias, así que
 no hace falta internet ni ningún servidor.
+
+## Diseño
+
+BlueWhale tiene identidad propia, inspirada en el océano profundo:
+
+- Paleta de **azules abisales** con acento **aqua bioluminiscente** y corazones en coral
+- Logo de **ballena** (`assets/icon.svg`), que también aparece en las carátulas vacías
+- Tipografía **Outfit** incluida en la app (`ui/fonts/`, licencia SIL OFL), así se ve igual sin internet
+- **Burbujas** que suben por el fondo y **olas** animadas en el inicio
+- La canción que suena muestra un **ecualizador** animado
+- En el teléfono, la carátula se ve en una **portilla** redonda que gira mientras suena, con ondas de **sonar**
+- Respeta la opción del sistema "reducir movimiento"
 
 ## Funciones
 
@@ -31,7 +45,7 @@ no hace falta internet ni ningún servidor.
 ## Estructura del proyecto
 
 ```
-crates/musica-core/   Núcleo en Rust (sin interfaz): SQLite, escaneo, metadatos, playlists + tests
+crates/bluewhale-core/   Núcleo en Rust (sin interfaz): SQLite, escaneo, metadatos, playlists + tests
 src-tauri/            App Tauri: expone el núcleo a la interfaz como comandos
 ui/                   Interfaz (index.html, style.css, app.js, icons.js)
 assets/icon.svg       Icono original (genera todos los iconos con `npm run icons`)
@@ -40,8 +54,8 @@ assets/icon.svg       Icono original (genera todos los iconos con `npm run icons
 
 Los datos de la app (base de datos, canciones importadas y carátulas) se guardan
 en la carpeta de datos de la app de cada sistema, por ejemplo
-`~/.local/share/com.soller.mimusica/` en Linux o
-`%APPDATA%\com.soller.mimusica\` en Windows.
+`~/.local/share/com.soller.bluewhale/` en Linux o
+`%APPDATA%\com.soller.bluewhale\` en Windows.
 
 ## Requisitos
 
@@ -85,7 +99,7 @@ teléfono y ábrelo para instalarlo (permite "instalar apps de origen
 desconocido").
 
 > 💡 **Sin instalar nada en tu PC**: en GitHub ve a *Actions → Build → Run
-> workflow*. Al terminar, descarga el artefacto **mi-musica-android** (el APK) o
+> workflow*. Al terminar, descarga el artefacto **bluewhale-android** (el APK) o
 > los instaladores de escritorio. También se compilan automáticamente al crear un
 > tag `v*` (por ejemplo `v0.1.0`).
 

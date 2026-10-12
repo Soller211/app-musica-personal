@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#121212" />
-  <title>Mi Música</title>
+  <meta name="theme-color" content="#061430" />
+  <title>BlueWhale</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="app">
     <aside id="sidebar">
-      <div class="brand"><span class="logo"></span>Mi Música</div>
+      <div class="brand"><span class="logo" data-logo></span><span>Blue<b>Whale</b></span></div>
       <nav id="nav"></nav>
       <div class="side-section">
         <div class="side-title">
@@ -19,9 +19,14 @@
         </div>
         <div id="side-playlists"></div>
       </div>
+      <svg class="side-wave" viewBox="0 0 260 70" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 30c30-14 55-14 85 0s55 14 90 0 55-14 85 0v40H0z" fill="rgba(79,214,255,.08)"/>
+        <path d="M0 44c35-12 60-12 95 0s60 12 95 0 45-10 70-4v30H0z" fill="rgba(42,123,255,.12)"/>
+      </svg>
     </aside>
 
     <main id="main">
+      <div id="bubbles" aria-hidden="true"></div>
       <header id="topbar">
         <button class="icon-btn" id="back-btn" title="Atrás"></button>
         <div id="topbar-title"></div>
@@ -72,7 +77,10 @@
         <div class="fp-from muted" id="fp-from">Reproduciendo</div>
         <button class="icon-btn" id="fp-queue" title="Cola"></button>
       </div>
-      <img id="fp-cover" class="fp-cover" alt="" />
+      <div class="porthole">
+        <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+        <img id="fp-cover" class="fp-cover" alt="" />
+      </div>
       <div class="fp-meta">
         <div>
           <div id="fp-title" class="fp-title ellipsis"></div>
