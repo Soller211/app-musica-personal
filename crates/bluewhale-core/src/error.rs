@@ -10,6 +10,8 @@ pub enum Error {
     Metadata { path: PathBuf, reason: String },
     #[error("formato de audio no soportado: {0}")]
     Unsupported(String),
+    #[error("{0}")]
+    Network(String),
     #[error("no encontrado: {0}")]
     NotFound(String),
 }

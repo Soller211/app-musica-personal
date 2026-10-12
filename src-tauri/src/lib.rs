@@ -1,17 +1,56 @@
 use std::path::PathBuf;
-use std::sync::{Mutex, MutexGuard};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex, MutexGuard};
+use std::time::Duration;
 
+use bluewhale_core::sync::{self, Peer, RemoteLibrary, ShareServer};
 use bluewhale_core::{Folder, Library, Playlist, ScanReport, Track};
+use serde::Serialize;
 use tauri::ipc::{InvokeBody, Request};
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State};
+
+/// Conexión del teléfono con una PC (tras introducir el código).
+struct SyncSession {
+    address: String,
+    code: String,
+    remote: RemoteLibrary,
+}
 
 struct AppState {
-    library: Mutex<Library>,
+    library: Arc<Mutex<Library>>,
+    share: Mutex<Option<ShareServer>>,
+    session: Mutex<Option<SyncSession>>,
+    syncing: Arc<AtomicBool>,
+    cancel: Arc<AtomicBool>,
 }
 
 impl AppState {
     fn lib(&self) -> Result<MutexGuard<'_, Library>, String> {
         self.library.lock().map_err(|e| e.to_string())
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ShareInfo {
+    name: String,
+    code: String,
+    port: u16,
+    addresses: Vec<String>,
+    sent: u64,
+    locked: bool,
+}
+
+impl From<&ShareServer> for ShareInfo {
+    fn from(s: &ShareServer) -> Self {
+        ShareInfo {
+            name: s.name().to_string(),
+            code: s.code().to_string(),
+            port: s.port(),
+            addresses: sync::local_ips(),
+            sent: s.sent(),
+            locked: s.locked(),
+        }
     }
 }
 
@@ -162,6 +201,115 @@ async fn set_playlist_tracks(
         .map_err(err)
 }
 
+// ------------------------------------------------------- Wi‑Fi: lado de la PC
+
+#[tauri::command]
+async fn share_start(state: State<'_, AppState>) -> CmdResult<ShareInfo> {
+    let mut share = state.share.lock().map_err(err)?;
+    // Reiniciar genera un código nuevo (y desbloquea tras intentos fallidos).
+    *share = None;
+    let server = ShareServer::start(state.library.clone()).map_err(err)?;
+    let info = ShareInfo::from(&server);
+    *share = Some(server);
+    Ok(info)
+}
+
+#[tauri::command]
+async fn share_stop(state: State<'_, AppState>) -> CmdResult<()> {
+    *state.share.lock().map_err(err)? = None;
+    Ok(())
+}
+
+#[tauri::command]
+async fn share_status(state: State<'_, AppState>) -> CmdResult<Option<ShareInfo>> {
+    Ok(state
+        .share
+        .lock()
+        .map_err(err)?
+        .as_ref()
+        .map(ShareInfo::from))
+}
+
+// --------------------------------------------------- Wi‑Fi: lado del teléfono
+
+#[tauri::command]
+async fn sync_discover() -> CmdResult<Vec<Peer>> {
+    tauri::async_runtime::spawn_blocking(|| sync::discover(Duration::from_millis(2500)))
+        .await
+        .map_err(err)
+}
+
+#[tauri::command]
+async fn sync_connect(
+    address: String,
+    code: String,
+    state: State<'_, AppState>,
+) -> CmdResult<RemoteLibrary> {
+    let (addr, c) = (address.clone(), code.clone());
+    let mut remote = tauri::async_runtime::spawn_blocking(move || sync::fetch_library(&addr, &c))
+        .await
+        .map_err(err)?
+        .map_err(err)?;
+    remote.mark_on_device(&*state.lib()?).map_err(err)?;
+    *state.session.lock().map_err(err)? = Some(SyncSession {
+        address: sync::normalize_address(&address),
+        code,
+        remote: remote.clone(),
+    });
+    Ok(remote)
+}
+
+/// Empieza a descargar en segundo plano. El progreso llega como eventos
+/// `sync-progress` y el resultado final como `sync-finished` (o `sync-error`).
+#[tauri::command]
+async fn sync_start(
+    track_ids: Vec<i64>,
+    playlist_ids: Vec<i64>,
+    app: AppHandle,
+    state: State<'_, AppState>,
+) -> CmdResult<()> {
+    let (address, code, remote) = {
+        let session = state.session.lock().map_err(err)?;
+        let s = session.as_ref().ok_or("Primero conecta con tu PC")?;
+        (s.address.clone(), s.code.clone(), s.remote.clone())
+    };
+    if state.syncing.swap(true, Ordering::SeqCst) {
+        return Err("Ya hay una descarga en curso".into());
+    }
+    state.cancel.store(false, Ordering::SeqCst);
+    let (library, syncing, cancel) = (
+        state.library.clone(),
+        state.syncing.clone(),
+        state.cancel.clone(),
+    );
+
+    std::thread::spawn(move || {
+        let result = sync::download_selection(
+            &address,
+            &code,
+            &remote,
+            &track_ids,
+            &playlist_ids,
+            &library,
+            &cancel,
+            |p| {
+                let _ = app.emit("sync-progress", p);
+            },
+        );
+        syncing.store(false, Ordering::SeqCst);
+        let _ = match result {
+            Ok(report) => app.emit("sync-finished", report),
+            Err(e) => app.emit("sync-error", e.to_string()),
+        };
+    });
+    Ok(())
+}
+
+#[tauri::command]
+fn sync_cancel(state: State<'_, AppState>) {
+    state.cancel.store(true, Ordering::SeqCst);
+}
+
 // ------------------------------------------------------------------------ app
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -175,7 +323,11 @@ pub fn run() {
                 allow_dir(app.handle(), std::path::Path::new(&folder.path));
             }
             app.manage(AppState {
-                library: Mutex::new(library),
+                library: Arc::new(Mutex::new(library)),
+                share: Mutex::new(None),
+                session: Mutex::new(None),
+                syncing: Arc::new(AtomicBool::new(false)),
+                cancel: Arc::new(AtomicBool::new(false)),
             });
             Ok(())
         })
@@ -197,6 +349,13 @@ pub fn run() {
             delete_playlist,
             add_to_playlist,
             set_playlist_tracks,
+            share_start,
+            share_stop,
+            share_status,
+            sync_discover,
+            sync_connect,
+            sync_start,
+            sync_cancel,
         ])
         .run(tauri::generate_context!())
         .expect("error al iniciar BlueWhale");

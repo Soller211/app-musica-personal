@@ -1,6 +1,6 @@
 [package]
 name = "bluewhale-core"
-description = "Biblioteca musical offline: escaneo, metadatos, base de datos y playlists"
+description = "Biblioteca musical offline: escaneo, metadatos, base de datos, playlists y sincronización por Wi-Fi"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -10,6 +10,11 @@ lofty = "0.25"
 rusqlite = { version = "0.40", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
+fastrand = "2"
+gethostname = "1"
+serde_json = "1"
+tiny_http = "0.12"
+ureq = { version = "3", default-features = false, features = ["json"] }
 walkdir = "2"
 
 [dev-dependencies]

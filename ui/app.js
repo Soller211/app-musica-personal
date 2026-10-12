@@ -665,6 +665,7 @@ function parseRoute() {
 }
 window.addEventListener("hashchange", () => {
   parseRoute();
+  if (route.name === "sync") enterSync();
   render();
   $("#view").scrollTop = 0;
 });
@@ -685,7 +686,7 @@ const TABS = [
   ["library", "library", "Biblioteca"],
   ["settings", "settings", "Ajustes"],
 ];
-const TAB_OF = { songs: "library", albums: "library", artists: "library", favorites: "library", playlists: "library", album: "library", artist: "library", playlist: "library" };
+const TAB_OF = { songs: "library", albums: "library", artists: "library", favorites: "library", playlists: "library", album: "library", artist: "library", playlist: "library", sync: "settings" };
 
 function renderNav() {
   $("#nav").innerHTML = NAV.map(([r, i, l]) => `<a href="#/${r}" data-r="${r}">${ICONS[i]}<span>${l}</span></a>`).join("");
@@ -970,6 +971,7 @@ const VIEWS = {
     const total = lib.tracks.reduce((s, t) => s + t.duration, 0);
     const imported = lib.tracks.filter((t) => t.imported).length;
     v.innerHTML = `<h1 class="page">Ajustes</h1>
+      ${lib.isMobile ? syncCardHtml() : shareCardHtml()}
       <div class="settings-card"><h3>Importar canciones</h3>
         <p>Copia archivos de audio dentro de la app. Quedan guardados en el almacenamiento privado de BlueWhale y siempre se pueden escuchar sin conexión.</p>
         <button class="btn" data-act="import">${ICONS.upload}Elegir archivos</button></div>
@@ -977,7 +979,8 @@ const VIEWS = {
         <p>Las canciones se leen directamente de estas carpetas (no se copian). Re-escanea cuando añadas música nueva.</p>
         <div id="folders"></div>
         <div class="actions" style="margin-top:12px"><button class="btn" data-act="folder">${ICONS.folder}Añadir carpeta</button>
-        <button class="btn ghost" data-act="rescan">${ICONS.refresh}Re-escanear</button></div></div>`}
+        <button class="btn ghost" data-act="rescan">${ICONS.refresh}Re-escanear</button></div></div>
+      ${syncCardHtml()}`}
       <div class="settings-card"><h3>Estadísticas</h3><div class="stats">
         <div><b>${lib.tracks.length}</b><span class="muted">canciones</span></div>
         <div><b>${lib.albums.size}</b><span class="muted">álbumes</span></div>
@@ -988,8 +991,13 @@ const VIEWS = {
       </div></div>
       <div class="signature"><div class="logo" data-logo></div>BlueWhale 0.1 · hecha con Rust + Tauri · 100% offline</div>`;
     injectLogos(v);
-    if (!lib.isMobile) renderFolders();
+    if (!lib.isMobile) {
+      renderFolders();
+      renderShare();
+    }
   },
+
+  sync: (v) => syncView(v),
 };
 
 bindCards($("#view"));
@@ -1009,7 +1017,7 @@ async function renderFolders() {
   }));
 }
 
-const TITLES = { home: "Inicio", search: "Buscar", library: "Tu biblioteca", songs: "Canciones", albums: "Álbumes", artists: "Artistas", favorites: "Favoritas", playlists: "Playlists", settings: "Ajustes" };
+const TITLES = { home: "Inicio", search: "Buscar", library: "Tu biblioteca", songs: "Canciones", albums: "Álbumes", artists: "Artistas", favorites: "Favoritas", playlists: "Playlists", settings: "Ajustes", sync: "Sincronizar" };
 let currentList = null;
 
 function render() {
@@ -1022,7 +1030,7 @@ function render() {
   highlightNav();
   const h1 = v.querySelector("h1");
   $("#topbar-title").textContent = TITLES[route.name] || (h1 ? h1.textContent : "");
-  $("#back-btn").style.visibility = ["album", "artist", "playlist"].includes(route.name) || (lib.isMobile && TAB_OF[route.name]) ? "visible" : "hidden";
+  $("#back-btn").style.visibility = ["album", "artist", "playlist", "sync"].includes(route.name) || (lib.isMobile && TAB_OF[route.name]) ? "visible" : "hidden";
 }
 
 // Acciones genéricas (botones con data-act dentro de la vista)
@@ -1159,6 +1167,8 @@ async function init() {
   } catch {}
   document.body.classList.toggle("mobile", lib.isMobile);
   parseRoute();
+  setupSyncEvents();
+  if (route.name === "sync") enterSync();
   try {
     await loadLibrary();
   } catch (e) {

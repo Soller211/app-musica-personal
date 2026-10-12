@@ -33,6 +33,11 @@ const ICONS = (() => {
     upload: s('<path fill="currentColor" d="M11 16V7.8L7.4 11.4 6 10l6-6 6 6-1.4 1.4L13 7.8V16zm-7 2h16v2H4z"/>'),
     refresh: s('<path fill="currentColor" d="M17.6 6.4A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.8-4.2L13 11h7V4z"/>'),
     edit: s('<path fill="currentColor" d="M4 17.3V20h2.7l8-8L12 9.3zM19.7 7 17 4.3l-2 2L17.7 9z"/>'),
+    wifi: s('<path fill="currentColor" d="M12 18a2 2 0 1 1 0 4 2 2 0 0 1 0-4M2.1 8.6A14 14 0 0 1 21.9 8.6l-1.5 1.5a12 12 0 0 0-16.8 0zm3.6 3.6a9 9 0 0 1 12.6 0l-1.5 1.5a7 7 0 0 0-9.6 0zm3.5 3.5a4 4 0 0 1 5.6 0L12 18.5z"/>'),
+    download: s('<path fill="currentColor" d="M11 3h2v9.2l3.6-3.6L18 10l-6 6-6-6 1.4-1.4 3.6 3.6zM4 18h16v2H4z"/>'),
+    check: s('<path fill="currentColor" d="m9.5 16.6-4.6-4.6-1.4 1.4 6 6 11-11-1.4-1.4z"/>'),
+    computer: s('<path fill="currentColor" d="M3 4h18v12H3zm2 2v8h14V6zM8 18h8v2H8z"/>'),
+    chevron: s('<path fill="currentColor" d="m10 6-1.4 1.4 4.6 4.6-4.6 4.6L10 18l6-6z"/>'),
     next2: s('<path fill="currentColor" d="M3 6h12v2H3zm0 5h12v2H3zm0 5h8v2H3zm14-2v-3h2v3h3v2h-3v3h-2v-3h-3v-2z"/>'),
   };
 })();

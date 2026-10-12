@@ -8,6 +8,7 @@ mod db;
 mod error;
 mod metadata;
 mod model;
+pub mod sync;
 
 pub use db::Library;
 pub use error::{Error, Result};

@@ -42,12 +42,33 @@ BlueWhale tiene identidad propia, inspirada en el océano profundo:
 | **Teléfono** | *Ajustes → Importar canciones*: eliges archivos y se **copian dentro de la app**, así siempre están disponibles sin conexión. |
 | **PC** | *Ajustes → Añadir carpeta*: la app lee tu carpeta de música directamente (no copia nada). Usa *Re‑escanear* cuando añadas canciones. También puedes importar archivos sueltos. |
 
+## Sincronizar por Wi‑Fi (PC → teléfono)
+
+Pasa música de tu PC al teléfono sin cables, eligiendo qué quieres:
+
+1. En la **PC**: *Ajustes → Compartir por Wi‑Fi → Activar*. Aparece un **código de 6 dígitos**.
+2. En el **teléfono** (en la misma red Wi‑Fi): *Ajustes → Sincronizar con mi PC*.
+   La app busca tu PC sola; si no la encuentra, escribe la dirección que se ve en la PC
+   (por ejemplo `192.168.1.20:47810`).
+3. Escribe el código, **elige álbumes o playlists** y pulsa *Descargar*.
+
+- Solo baja lo que **aún no tienes**; las playlists elegidas se crean (o actualizan) en el teléfono.
+- Lo descargado queda en el teléfono y se escucha **sin conexión**.
+- El servidor de la PC solo funciona mientras "Compartir" está activado y solo en tu red local.
+  Tras 20 códigos incorrectos se bloquea hasta que generes un código nuevo.
+- La primera vez, **Windows o macOS pueden preguntar si permites conexiones entrantes**:
+  acepta para redes **privadas**.
+- Puertos usados: `47809/UDP` (descubrimiento) y `47810/TCP` (descarga).
+- Las redes públicas o de empresa a veces bloquean la comunicación entre dispositivos;
+  en casa normalmente funciona sin tocar nada.
+
 ## Estructura del proyecto
 
 ```
-crates/bluewhale-core/   Núcleo en Rust (sin interfaz): SQLite, escaneo, metadatos, playlists + tests
+crates/bluewhale-core/   Núcleo en Rust (sin interfaz): SQLite, escaneo, metadatos, playlists,
+                      sincronización Wi‑Fi (sync/) + tests
 src-tauri/            App Tauri: expone el núcleo a la interfaz como comandos
-ui/                   Interfaz (index.html, style.css, app.js, icons.js)
+ui/                   Interfaz (index.html, style.css, app.js, sync.js, icons.js)
 assets/icon.svg       Icono original (genera todos los iconos con `npm run icons`)
 .github/workflows/    CI: tests + compilación del APK de Android y de los instaladores de PC
 ```
@@ -127,5 +148,5 @@ cargo test --workspace
 - En Android, la reproducción con la pantalla bloqueada / app en segundo plano
   depende del WebView; para un control total (notificación con controles) el
   siguiente paso sería un plugin nativo de Tauri con un `MediaSessionService`.
-- Ideas: ecualizador, letras (`.lrc`), editar etiquetas, sincronizar la
-  biblioteca entre PC y teléfono por Wi‑Fi local.
+- Ideas: ecualizador, letras (`.lrc`), editar etiquetas, sincronizar también
+  favoritas y playlists del teléfono hacia la PC.

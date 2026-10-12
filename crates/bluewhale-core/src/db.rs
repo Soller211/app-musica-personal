@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -225,6 +225,27 @@ impl Library {
     /// la música queda guardada en el almacenamiento privado y siempre
     /// disponible offline) y lo añade a la biblioteca.
     pub fn import_bytes(&self, file_name: &str, bytes: &[u8]) -> Result<Track> {
+        let dest = self.unique_dest(file_name)?;
+        fs::write(&dest, bytes)?;
+        self.register_imported(&dest)
+    }
+
+    /// Mueve a la biblioteca un archivo ya descargado dentro de `music_dir`
+    /// (por ejemplo, desde la sincronización por Wi‑Fi) sin volver a copiarlo.
+    pub fn adopt_file(&self, tmp: &Path, file_name: &str) -> Result<Track> {
+        let dest = match self.unique_dest(file_name) {
+            Ok(d) => d,
+            Err(e) => {
+                let _ = fs::remove_file(tmp);
+                return Err(e);
+            }
+        };
+        fs::rename(tmp, &dest)?;
+        self.register_imported(&dest)
+    }
+
+    /// Ruta libre dentro de `music_dir` para un archivo con ese nombre.
+    fn unique_dest(&self, file_name: &str) -> Result<PathBuf> {
         let name = sanitize_file_name(file_name);
         if !is_audio_file(Path::new(&name)) {
             return Err(Error::Unsupported(name));
@@ -244,14 +265,33 @@ impl Library {
             dest = self.music_dir.join(format!("{stem} ({n}).{ext}"));
             n += 1;
         }
-        fs::write(&dest, bytes)?;
-        match self.upsert_file(&dest, true) {
+        Ok(dest)
+    }
+
+    fn register_imported(&self, dest: &Path) -> Result<Track> {
+        match self.upsert_file(dest, true) {
             Ok((track, _)) => Ok(track),
             Err(e) => {
-                let _ = fs::remove_file(&dest);
+                let _ = fs::remove_file(dest);
                 Err(e)
             }
         }
+    }
+
+    /// Clave de identidad de cada canción local (ver [`crate::sync::track_key`]),
+    /// usada para saber qué canciones de la PC ya están en este dispositivo.
+    pub fn local_keys(&self) -> Result<HashMap<String, i64>> {
+        Ok(self
+            .tracks()?
+            .into_iter()
+            .map(|t| {
+                let size = fs::metadata(&t.path).map(|m| m.len()).unwrap_or(0);
+                (
+                    crate::sync::track_key(&t.title, &t.artist, &t.album, size),
+                    t.id,
+                )
+            })
+            .collect())
     }
 
     /// Importa (copiando) un archivo que ya está en disco.
@@ -526,6 +566,25 @@ impl Library {
         }
         tx.commit()?;
         Ok(())
+    }
+
+    /// Crea la playlist `name` o, si ya existe una con ese nombre, reemplaza
+    /// su contenido. Devuelve su id.
+    pub fn upsert_playlist_by_name(&self, name: &str, track_ids: &[i64]) -> Result<i64> {
+        let existing: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT id FROM playlists WHERE name = ?1 COLLATE NOCASE ORDER BY id LIMIT 1",
+                [name.trim()],
+                |r| r.get(0),
+            )
+            .optional()?;
+        let id = match existing {
+            Some(id) => id,
+            None => self.create_playlist(name)?.id,
+        };
+        self.set_playlist_tracks(id, track_ids)?;
+        Ok(id)
     }
 
     pub fn add_to_playlist(&self, id: i64, track_ids: &[i64]) -> Result<()> {
