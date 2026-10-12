@@ -6,7 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use rusqlite::{params, Connection, OptionalExtension, Row};
 use walkdir::WalkDir;
 
-use crate::metadata::{is_audio_file, read_meta};
+use crate::metadata::{is_audio_file, read_meta, sniff_extension};
 use crate::model::{Folder, Playlist, ScanReport, Track, TrackMeta};
 use crate::{Error, Result};
 
@@ -119,6 +119,37 @@ fn sanitize_file_name(name: &str) -> String {
     }
 }
 
+/// Archivo que llega por partes desde la interfaz. En Android el puente con
+/// la interfaz no admite enviar binarios grandes de una vez, así que la
+/// interfaz los manda en trozos.
+pub struct PendingUpload {
+    path: PathBuf,
+    file: fs::File,
+    bytes: u64,
+}
+
+impl PendingUpload {
+    /// Límite por archivo importado.
+    pub const MAX_BYTES: u64 = 2 * 1024 * 1024 * 1024;
+
+    pub fn append(&mut self, data: &[u8]) -> Result<()> {
+        use std::io::Write;
+        self.bytes += data.len() as u64;
+        if self.bytes > Self::MAX_BYTES {
+            return Err(Error::Unsupported("archivo de más de 2 GB".into()));
+        }
+        self.file.write_all(data)?;
+        Ok(())
+    }
+
+    /// Descarta la subida y borra el archivo temporal.
+    pub fn abort(self) {
+        let PendingUpload { path, file, .. } = self;
+        drop(file);
+        let _ = fs::remove_file(path);
+    }
+}
+
 impl Library {
     /// Abre (o crea) la biblioteca dentro de `data_dir`.
     ///
@@ -139,6 +170,14 @@ impl Library {
         let covers_dir = data_dir.join("covers");
         fs::create_dir_all(&music_dir)?;
         fs::create_dir_all(&covers_dir)?;
+        // Restos de descargas o importaciones interrumpidas (app cerrada a mitad).
+        if let Ok(entries) = fs::read_dir(&music_dir) {
+            for e in entries.flatten() {
+                if e.file_name().to_string_lossy().ends_with(".part") {
+                    let _ = fs::remove_file(e.path());
+                }
+            }
+        }
         Ok(Self {
             conn,
             music_dir,
@@ -233,7 +272,18 @@ impl Library {
     /// Mueve a la biblioteca un archivo ya descargado dentro de `music_dir`
     /// (por ejemplo, desde la sincronización por Wi‑Fi) sin volver a copiarlo.
     pub fn adopt_file(&self, tmp: &Path, file_name: &str) -> Result<Track> {
-        let dest = match self.unique_dest(file_name) {
+        let mut name = sanitize_file_name(file_name);
+        if !is_audio_file(Path::new(&name)) {
+            // Sin extensión de audio: la deducimos del contenido.
+            if let Some(ext) = sniff_extension(tmp) {
+                let stem = Path::new(&name)
+                    .file_stem()
+                    .map(|s| s.to_string_lossy().into_owned())
+                    .unwrap_or_else(|| "cancion".into());
+                name = format!("{stem}.{ext}");
+            }
+        }
+        let dest = match self.unique_dest(&name) {
             Ok(d) => d,
             Err(e) => {
                 let _ = fs::remove_file(tmp);
@@ -242,6 +292,27 @@ impl Library {
         };
         fs::rename(tmp, &dest)?;
         self.register_imported(&dest)
+    }
+
+    /// Empieza a recibir un archivo por partes (ver [`PendingUpload`]).
+    pub fn begin_upload(&self) -> Result<PendingUpload> {
+        let path = self
+            .music_dir
+            .join(format!(".subida-{}.part", fastrand::u64(..)));
+        let file = fs::File::create(&path)?;
+        Ok(PendingUpload {
+            path,
+            file,
+            bytes: 0,
+        })
+    }
+
+    /// Termina una subida y añade la canción a la biblioteca.
+    pub fn finish_upload(&self, upload: PendingUpload, file_name: &str) -> Result<Track> {
+        let PendingUpload { path, file, .. } = upload;
+        file.sync_all()?;
+        drop(file);
+        self.adopt_file(&path, file_name)
     }
 
     /// Ruta libre dentro de `music_dir` para un archivo con ese nombre.
@@ -664,6 +735,38 @@ mod tests {
         lib.delete_track(t.id).unwrap();
         assert!(!Path::new(&t.path).exists());
         assert_eq!(lib.tracks().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn upload_in_chunks_without_extension() {
+        let dir = tempfile::tempdir().unwrap();
+        // Un .part viejo de una sesión anterior se limpia al abrir.
+        fs::create_dir_all(dir.path().join("music")).unwrap();
+        fs::write(dir.path().join("music/.subida-1.part"), b"resto").unwrap();
+        let lib = Library::open(dir.path()).unwrap();
+        assert_eq!(fs::read_dir(lib.music_dir()).unwrap().count(), 0);
+
+        // Como en Android: llega en trozos y el nombre es solo un número.
+        let bytes = tiny_wav(4000);
+        let mut up = lib.begin_upload().unwrap();
+        for chunk in bytes.chunks(1000) {
+            up.append(chunk).unwrap();
+        }
+        let t = lib.finish_upload(up, "1000034521").unwrap();
+        assert!(t.path.ends_with("1000034521.wav"), "{}", t.path);
+        assert!((t.duration - 0.5).abs() < 0.05);
+
+        // Algo que no es audio se rechaza y no deja basura.
+        let mut up = lib.begin_upload().unwrap();
+        up.append(b"hola, no soy audio").unwrap();
+        let err = lib.finish_upload(up, "notas").unwrap_err();
+        assert!(
+            err.to_string().contains("no es un formato de audio"),
+            "{err}"
+        );
+        let up = lib.begin_upload().unwrap();
+        up.abort();
+        assert_eq!(fs::read_dir(lib.music_dir()).unwrap().count(), 1);
     }
 
     #[test]

@@ -22,6 +22,27 @@ pub fn is_audio_file(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
+/// Deduce la extensión correcta mirando el contenido del archivo (útil cuando
+/// el nombre no la trae, como ocurre a veces con el selector de Android).
+pub fn sniff_extension(path: &Path) -> Option<&'static str> {
+    use lofty::file::FileType;
+    let probe = lofty::probe::Probe::open(path)
+        .ok()?
+        .guess_file_type()
+        .ok()?;
+    Some(match probe.file_type()? {
+        FileType::Mpeg => "mp3",
+        FileType::Flac => "flac",
+        FileType::Mp4 => "m4a",
+        FileType::Aac => "aac",
+        FileType::Opus => "opus",
+        FileType::Vorbis | FileType::Speex => "ogg",
+        FileType::Wav => "wav",
+        FileType::Aiff => "aiff",
+        _ => return None,
+    })
+}
+
 /// Lee los metadatos de `path` y guarda su carátula (si la tiene) en `covers_dir`.
 pub(crate) fn read_meta(path: &Path, covers_dir: &Path) -> Result<TrackMeta> {
     let tagged = lofty::read_from_path(path).map_err(|e| Error::Metadata {

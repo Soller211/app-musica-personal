@@ -158,8 +158,8 @@ dependencies = [
 name = "bluewhale"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "bluewhale-core",
- "percent-encoding",
  "serde",
  "serde_json",
  "tauri",

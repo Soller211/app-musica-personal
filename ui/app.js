@@ -440,24 +440,61 @@ async function deleteTrack(id) {
   toast("Canción eliminada");
 }
 
+const UPLOAD_CHUNK = 1024 * 1024; // 1 MB por trozo
+
+/** Uint8Array → base64, en tramos para no desbordar la pila. */
+function toBase64(bytes) {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(bin);
+}
+
+/** Envía un archivo a Rust por partes (funciona igual en Android y en PC). */
+async function uploadFile(file, onProgress) {
+  const id = await invoke("upload_begin");
+  try {
+    for (let pos = 0; pos < file.size; pos += UPLOAD_CHUNK) {
+      const chunk = new Uint8Array(await file.slice(pos, pos + UPLOAD_CHUNK).arrayBuffer());
+      await invoke("upload_chunk", { id, data: toBase64(chunk) });
+      onProgress(Math.min(1, (pos + chunk.length) / file.size));
+    }
+    return await invoke("upload_finish", { id, name: file.name || "cancion" });
+  } catch (e) {
+    invoke("upload_abort", { id }).catch(() => {});
+    throw e;
+  }
+}
+
 async function importFiles(files) {
   files = [...files];
   if (!files.length) return;
   let ok = 0;
   const errors = [];
   for (const [i, f] of files.entries()) {
-    toast(`Importando ${i + 1}/${files.length}: ${f.name}`, 0);
+    const label = files.length > 1 ? `${i + 1}/${files.length} · ${f.name}` : f.name;
+    toast(`Importando ${label}`, 0);
     try {
-      const bytes = new Uint8Array(await f.arrayBuffer());
-      await invoke("import_file", bytes, { headers: { "x-file-name": encodeURIComponent(f.name) } });
+      await uploadFile(f, (frac) => toast(`Importando ${label} · ${Math.round(frac * 100)}%`, 0));
       ok++;
     } catch (e) {
-      errors.push(`${f.name}: ${e}`);
+      errors.push({ name: f.name, msg: String(e) });
     }
   }
   await loadLibrary();
-  toast(errors.length ? `${ok} importadas, ${errors.length} con error` : `${plural(ok, "canción importada", "canciones importadas")}`, 4000);
-  if (errors.length) console.warn(errors);
+  if (!errors.length) return toast(plural(ok, "canción importada", "canciones importadas"), 3500);
+  $("#toast").hidden = true;
+  // Mostramos el motivo concreto de cada error.
+  openSheet(
+    `<h3>${ok ? `${plural(ok, "canción importada", "canciones importadas")}, ` : ""}${plural(errors.length, "no se pudo importar", "no se pudieron importar")}</h3>
+     <div class="import-errors">${errors
+       .slice(0, 20)
+       .map((e) => `<div><b class="ellipsis">${esc(e.name)}</b><span class="muted small">${esc(e.msg)}</span></div>`)
+       .join("")}</div>
+     <form><div class="row"><button type="button" class="btn" data-act="ok">Entendido</button></div></form>`,
+    () => closeSheet()
+  );
 }
 
 function scanSummary(r) {

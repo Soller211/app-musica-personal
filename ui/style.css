@@ -582,3 +582,6 @@ body.is-playing .porthole .ring { animation: sonar 3.6s ease-out infinite; }
 .link-progress .row { display: flex; justify-content: flex-end; margin-top: 10px; }
 .progress-bar div.indeterminate { width: 35% !important; animation: slide 1.2s ease-in-out infinite; }
 @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+
+.import-errors { display: grid; gap: 10px; padding: 12px 20px 0; }
+.import-errors > div { display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; background: rgba(255, 122, 147, 0.08); border: 1px solid rgba(255, 122, 147, 0.3); }

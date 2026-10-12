@@ -1,12 +1,12 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 
 use bluewhale_core::sync::{self, Peer, RemoteLibrary, ShareServer};
-use bluewhale_core::{Folder, Library, Playlist, ScanReport, Track};
+use bluewhale_core::{Folder, Library, PendingUpload, Playlist, ScanReport, Track};
 use serde::Serialize;
-use tauri::ipc::{InvokeBody, Request};
 use tauri::{AppHandle, Emitter, Manager, State};
 
 /// Conexión del teléfono con una PC (tras introducir el código).
@@ -24,6 +24,8 @@ struct AppState {
     cancel: Arc<AtomicBool>,
     link_busy: Arc<AtomicBool>,
     link_cancel: Arc<AtomicBool>,
+    uploads: Mutex<HashMap<u64, PendingUpload>>,
+    next_upload: AtomicU64,
 }
 
 impl AppState {
@@ -81,24 +83,51 @@ async fn get_tracks(state: State<'_, AppState>) -> CmdResult<Vec<Track>> {
     state.lib()?.tracks().map_err(err)
 }
 
-/// Recibe el archivo como bytes crudos (sin pasar por JSON) y lo copia
-/// dentro de la app. El nombre llega en la cabecera `x-file-name`.
+/// Importar un archivo llega en tres pasos: `upload_begin`, varios
+/// `upload_chunk` (trozos en base64) y `upload_finish`. Así funciona igual en
+/// Android, donde el puente con la interfaz no admite binarios grandes.
 #[tauri::command]
-async fn import_file(request: Request<'_>, state: State<'_, AppState>) -> CmdResult<Track> {
-    let InvokeBody::Raw(bytes) = request.body() else {
-        return Err("se esperaban bytes del archivo".into());
-    };
-    let name = request
-        .headers()
-        .get("x-file-name")
-        .and_then(|v| v.to_str().ok())
-        .map(|v| {
-            percent_encoding::percent_decode_str(v)
-                .decode_utf8_lossy()
-                .into_owned()
-        })
-        .unwrap_or_else(|| "cancion.mp3".into());
-    state.lib()?.import_bytes(&name, bytes).map_err(err)
+async fn upload_begin(state: State<'_, AppState>) -> CmdResult<u64> {
+    let upload = state.lib()?.begin_upload().map_err(err)?;
+    let id = state.next_upload.fetch_add(1, Ordering::SeqCst);
+    state.uploads.lock().map_err(err)?.insert(id, upload);
+    Ok(id)
+}
+
+#[tauri::command]
+async fn upload_chunk(id: u64, data: String, state: State<'_, AppState>) -> CmdResult<()> {
+    use base64::Engine;
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(data.as_bytes())
+        .map_err(|e| format!("trozo dañado: {e}"))?;
+    let mut uploads = state.uploads.lock().map_err(err)?;
+    let upload = uploads.get_mut(&id).ok_or("La importación ya no existe")?;
+    if let Err(e) = upload.append(&bytes) {
+        if let Some(u) = uploads.remove(&id) {
+            u.abort();
+        }
+        return Err(err(e));
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn upload_finish(id: u64, name: String, state: State<'_, AppState>) -> CmdResult<Track> {
+    let upload = state
+        .uploads
+        .lock()
+        .map_err(err)?
+        .remove(&id)
+        .ok_or("La importación ya no existe")?;
+    state.lib()?.finish_upload(upload, &name).map_err(err)
+}
+
+#[tauri::command]
+async fn upload_abort(id: u64, state: State<'_, AppState>) -> CmdResult<()> {
+    if let Some(u) = state.uploads.lock().map_err(err)?.remove(&id) {
+        u.abort();
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -368,13 +397,18 @@ pub fn run() {
                 cancel: Arc::new(AtomicBool::new(false)),
                 link_busy: Arc::new(AtomicBool::new(false)),
                 link_cancel: Arc::new(AtomicBool::new(false)),
+                uploads: Mutex::new(HashMap::new()),
+                next_upload: AtomicU64::new(1),
             });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             is_mobile,
             get_tracks,
-            import_file,
+            upload_begin,
+            upload_chunk,
+            upload_finish,
+            upload_abort,
             delete_track,
             set_favorite,
             record_play,

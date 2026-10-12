@@ -8,7 +8,7 @@ pub enum Error {
     Io(#[from] std::io::Error),
     #[error("no se pudieron leer los metadatos de {path}: {reason}")]
     Metadata { path: PathBuf, reason: String },
-    #[error("formato de audio no soportado: {0}")]
+    #[error("«{0}» no es un formato de audio compatible (MP3, M4A, FLAC, OGG, OPUS, WAV…)")]
     Unsupported(String),
     #[error("{0}")]
     Network(String),

@@ -11,7 +11,7 @@ mod metadata;
 mod model;
 pub mod sync;
 
-pub use db::Library;
+pub use db::{Library, PendingUpload};
 pub use error::{Error, Result};
 pub use metadata::{is_audio_file, AUDIO_EXTENSIONS};
 pub use model::{Folder, Playlist, ScanReport, Track};
